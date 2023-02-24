@@ -1,4 +1,4 @@
-# otp - HOTP, TOTP and Key Uri Format
+# otp - Implmentation of OTP algorithms
 
 ## Informations
 
