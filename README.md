@@ -8,7 +8,7 @@
 
 This library implements various One Time Password (OTP) algorithms. The main goal if this library is to provide low level implementations of those.
 
-It can be used as a base block for building a 2FA system.
+It can be used as a base block for building a MFA system.
 
 ### Supported standards
 
@@ -18,7 +18,7 @@ It can be used as a base block for building a 2FA system.
 
 ### Limitations
 
-This library doesn't have the goal to porvide all the tools needed to setup a 2FA, but rather the low level implementations of the algorithms. Thus, some features are missing like :
+This library doesn't have the goal to porvide all the tools needed to setup a MFA system, but rather the low level implementations of the algorithms. Thus, some features are missing like :
 - Secret key generation
 - QR code generation
 - OTP codes string formatting
