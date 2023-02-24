@@ -9,15 +9,15 @@ import (
 )
 
 type HOTPOptions struct {
-	Digits   uint
-	HashFunc func() hash.Hash
+	Digits    uint
+	Algorithm func() hash.Hash
 }
 
 // HOTP computes the OTP code of a given count.
 func HOTP(key []byte, count int, opts HOTPOptions) uint {
 	// defaults
-	if opts.HashFunc == nil {
-		opts.HashFunc = sha1.New
+	if opts.Algorithm == nil {
+		opts.Algorithm = sha1.New
 	}
 
 	if opts.Digits == 0 {
@@ -25,7 +25,7 @@ func HOTP(key []byte, count int, opts HOTPOptions) uint {
 	}
 
 	// compute
-	return dynamicTruncation(hmacShaN(opts.HashFunc, key, count)) % pow10(opts.Digits)
+	return dynamicTruncation(hmacShaN(opts.Algorithm, key, count)) % pow10(opts.Digits)
 }
 
 // hmacShaN generates a hmac-sha-n. The hash function is passed as a parameter.

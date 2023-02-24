@@ -1,3 +1,4 @@
+// key implements Google Authenticator Key Uri Format as described by the google-authenticator wiki (https://github.com/google/google-authenticator/wiki/Key-Uri-Format).
 package otp
 
 import (
@@ -13,8 +14,8 @@ import (
 
 const (
 	uriScheme = "otpauth"
-	typeTotp  = "totp"
-	typeHotp  = "hotp"
+	TypeTotp  = "totp"
+	TypeHotp  = "hotp"
 
 	queryKeySecret    = "secret"
 	queryKeyIssuer    = "issuer"
@@ -46,9 +47,23 @@ type Key struct {
 	Secret    []byte
 	Issuer    string
 	Algorithm func() hash.Hash
-	Digits    int
+	Digits    uint
 	Counter   int
 	Period    int
+}
+
+func (key *Key) HOTPOptions() HOTPOptions {
+	return HOTPOptions{
+		Digits:    key.Digits,
+		Algorithm: key.Algorithm,
+	}
+}
+
+func (key *Key) TOTPOptions() TOTPOptions {
+	return TOTPOptions{
+		HOTPOptions: key.HOTPOptions(),
+		Period:      key.Period,
+	}
 }
 
 func ParseURI(uri string) (Key, error) {
@@ -65,7 +80,7 @@ func ParseURI(uri string) (Key, error) {
 	}
 
 	// type (+validation)
-	if parsed.Host != typeTotp && parsed.Host != typeHotp {
+	if parsed.Host != TypeTotp && parsed.Host != TypeHotp {
 		return res, ErrInvalidType
 	}
 	res.Type = parsed.Host
@@ -103,17 +118,17 @@ func ParseURI(uri string) (Key, error) {
 
 	// digits
 	if parsed.Query().Has(queryKeyDigits) {
-		digits, err := strconv.ParseInt(parsed.Query().Get(queryKeyDigits), 10, 0)
+		digits, err := strconv.ParseUint(parsed.Query().Get(queryKeyDigits), 10, 0)
 		if err != nil {
 			return res, err
 		}
-		res.Digits = int(digits)
+		res.Digits = uint(digits)
 	} else {
 		res.Digits = 6
 	}
 
 	// counter (only hotp)
-	if res.Type == typeHotp {
+	if res.Type == TypeHotp {
 		if !parsed.Query().Has(queryKeyCounter) {
 			return res, ErrNoCounter
 		} else {
@@ -126,7 +141,7 @@ func ParseURI(uri string) (Key, error) {
 	}
 
 	// period (only totp)
-	if res.Type == typeTotp {
+	if res.Type == TypeTotp {
 		if parsed.Query().Has(queryKeyPeriod) {
 			period, err := strconv.ParseInt(parsed.Query().Get(queryKeyPeriod), 10, 0)
 			if err != nil {

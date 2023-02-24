@@ -220,8 +220,8 @@ func TestTOTP(t *testing.T) {
 	for i, testValue := range totpTestValues {
 		res := TOTP(testValue.Secret, testValue.Time, TOTPOptions{
 			HOTPOptions: HOTPOptions{
-				Digits:   testValue.Digits,
-				HashFunc: testValue.Mode,
+				Digits:    testValue.Digits,
+				Algorithm: testValue.Mode,
 			},
 			TimeReference: testValue.TimeReference,
 			Period:        testValue.Period,
@@ -252,8 +252,8 @@ func TestTOTPStep(t *testing.T) {
 		for _, step := range steps {
 			resAdd := TOTP(testValue.Secret, testValue.Time.Add(time.Duration(testValue.Period)*time.Second*time.Duration(step)), TOTPOptions{
 				HOTPOptions: HOTPOptions{
-					Digits:   testValue.Digits,
-					HashFunc: testValue.Mode,
+					Digits:    testValue.Digits,
+					Algorithm: testValue.Mode,
 				},
 				TimeReference: testValue.TimeReference,
 				Period:        testValue.Period,
@@ -261,8 +261,8 @@ func TestTOTPStep(t *testing.T) {
 			})
 			resStep := TOTP(testValue.Secret, testValue.Time, TOTPOptions{
 				HOTPOptions: HOTPOptions{
-					Digits:   testValue.Digits,
-					HashFunc: testValue.Mode,
+					Digits:    testValue.Digits,
+					Algorithm: testValue.Mode,
 				},
 				TimeReference: testValue.TimeReference,
 				Period:        testValue.Period,
