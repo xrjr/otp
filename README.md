@@ -1,4 +1,4 @@
-# otp - Implmentation of OTP algorithms
+# otp - Implementation of OTP algorithms
 
 ## Informations
 
