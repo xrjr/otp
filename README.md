@@ -13,7 +13,7 @@ It can be used as a base block for building a MFA system.
 ### Supported standards
 
 - HOTP ([rfc 4226](https://www.ietf.org/rfc/rfc4226.txt))
-- TOTP ([rfc 6238](https://www.rfc-editor.org/rfc/rfc6238))
+- TOTP ([rfc 6238](https://www.ietf.org/rfc/rfc6238.txt))
 - Google Authenticator Key Uri Format ([wiki](https://github.com/google/google-authenticator/wiki/Key-Uri-Format))
 
 ### Limitations
