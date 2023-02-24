@@ -21,11 +21,11 @@ func TOTP(key []byte, t time.Time, opts TOTPOptions) uint {
 	}
 
 	// Compute
-	return HOTP(key, timePeriodCount(t.Unix(), opts.TimeReference, opts.Period)+opts.Step, opts.HOTPOptions)
+	return HOTP(key, timePeriodCounter(t.Unix(), opts.TimeReference, opts.Period)+opts.Step, opts.HOTPOptions)
 }
 
-// timePeriodCount returns T as defined in section 4.2 of the rfc.
-func timePeriodCount(currentTime int64, t0 int64, x int) int {
+// timePeriodCounter returns T as defined in section 4.2 of the rfc.
+func timePeriodCounter(currentTime int64, t0 int64, x int) int {
 	if currentTime < t0 {
 		return int((currentTime-t0)/int64(x)) - 1
 	}

@@ -2,20 +2,21 @@
 package otp
 
 import (
-	"crypto/sha1"
-	"crypto/sha256"
-	"crypto/sha512"
+	"crypto"
+	_ "crypto/sha1"
+	_ "crypto/sha256"
+	_ "crypto/sha512"
 	"encoding/base32"
 	"errors"
-	"hash"
+	"fmt"
 	"net/url"
 	"strconv"
 )
 
 const (
 	uriScheme = "otpauth"
-	TypeTotp  = "totp"
-	TypeHotp  = "hotp"
+	TypeTOTP  = "totp"
+	TypeHOTP  = "hotp"
 
 	queryKeySecret    = "secret"
 	queryKeyIssuer    = "issuer"
@@ -26,10 +27,16 @@ const (
 )
 
 var (
-	algorithms = map[string]func() hash.Hash{
-		"SHA1":   sha1.New,
-		"SHA256": sha256.New,
-		"SHA512": sha512.New,
+	algorithmsStringToHash = map[string]crypto.Hash{
+		"SHA1":   crypto.SHA1,
+		"SHA256": crypto.SHA256,
+		"SHA512": crypto.SHA512,
+	}
+
+	algorithmsHashToString = map[crypto.Hash]string{
+		crypto.SHA1:   "SHA1",
+		crypto.SHA256: "SHA256",
+		crypto.SHA512: "SHA512",
 	}
 )
 
@@ -46,7 +53,7 @@ type Key struct {
 	Label     string
 	Secret    []byte
 	Issuer    string
-	Algorithm func() hash.Hash
+	Algorithm crypto.Hash
 	Digits    uint
 	Counter   int
 	Period    int
@@ -55,7 +62,7 @@ type Key struct {
 func (key *Key) HOTPOptions() HOTPOptions {
 	return HOTPOptions{
 		Digits:    key.Digits,
-		Algorithm: key.Algorithm,
+		Algorithm: key.Algorithm.New,
 	}
 }
 
@@ -80,7 +87,7 @@ func ParseURI(uri string) (Key, error) {
 	}
 
 	// type (+validation)
-	if parsed.Host != TypeTotp && parsed.Host != TypeHotp {
+	if parsed.Host != TypeTOTP && parsed.Host != TypeHOTP {
 		return res, ErrInvalidType
 	}
 	res.Type = parsed.Host
@@ -89,7 +96,7 @@ func ParseURI(uri string) (Key, error) {
 	res.Label = parsed.Path[1:]
 
 	// secret (+validation)
-	if !parsed.Query().Has(queryKeySecret) {
+	if !parsed.Query().Has(queryKeySecret) || parsed.Query().Get(queryKeySecret) == "" {
 		return res, ErrNoSecret
 	}
 
@@ -105,7 +112,7 @@ func ParseURI(uri string) (Key, error) {
 	// algorithm
 	if parsed.Query().Has(queryKeyAlgorithm) {
 		algorithmRaw := parsed.Query().Get(queryKeyAlgorithm)
-		algorithm, ok := algorithms[algorithmRaw]
+		algorithm, ok := algorithmsStringToHash[algorithmRaw]
 
 		if !ok {
 			return res, ErrInvalidAlgorithm
@@ -113,7 +120,7 @@ func ParseURI(uri string) (Key, error) {
 
 		res.Algorithm = algorithm
 	} else {
-		res.Algorithm = sha1.New
+		res.Algorithm = crypto.SHA1
 	}
 
 	// digits
@@ -128,7 +135,7 @@ func ParseURI(uri string) (Key, error) {
 	}
 
 	// counter (only hotp)
-	if res.Type == TypeHotp {
+	if res.Type == TypeHOTP {
 		if !parsed.Query().Has(queryKeyCounter) {
 			return res, ErrNoCounter
 		} else {
@@ -141,7 +148,7 @@ func ParseURI(uri string) (Key, error) {
 	}
 
 	// period (only totp)
-	if res.Type == TypeTotp {
+	if res.Type == TypeTOTP {
 		if parsed.Query().Has(queryKeyPeriod) {
 			period, err := strconv.ParseInt(parsed.Query().Get(queryKeyPeriod), 10, 0)
 			if err != nil {
@@ -154,4 +161,43 @@ func ParseURI(uri string) (Key, error) {
 	}
 
 	return res, nil
+}
+
+func (key Key) URI() (string, error) {
+	if key.Type != TypeHOTP && key.Type != TypeTOTP {
+		return "", ErrInvalidType
+	}
+
+	params := make(url.Values)
+
+	if len(key.Secret) == 0 {
+		return "", ErrNoSecret
+	}
+
+	secret := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(key.Secret)
+	params.Set(queryKeySecret, secret)
+
+	if key.Issuer != "" {
+		params.Set(queryKeyIssuer, key.Issuer)
+	}
+
+	if key.Digits != 0 {
+		params.Set(queryKeyIssuer, key.Issuer)
+	}
+
+	algorithm, ok := algorithmsHashToString[key.Algorithm]
+	if !ok {
+		return "", ErrInvalidAlgorithm
+	}
+	params.Set(queryKeyAlgorithm, algorithm)
+
+	if key.Type == TypeHOTP {
+		params.Set(queryKeyCounter, strconv.FormatInt(int64(key.Counter), 10)) // no need to check counter because of zero value
+	} else {
+		if key.Period != 0 {
+			params.Set(queryKeyPeriod, strconv.FormatInt(int64(key.Period), 10))
+		}
+	}
+
+	return fmt.Sprintf("otpauth://%s/%s?%s", key.Type, key.Label, params.Encode()), nil
 }

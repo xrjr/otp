@@ -14,7 +14,7 @@ type HOTPOptions struct {
 }
 
 // HOTP computes the OTP code of a given count.
-func HOTP(key []byte, count int, opts HOTPOptions) uint {
+func HOTP(key []byte, counter int, opts HOTPOptions) uint {
 	// defaults
 	if opts.Algorithm == nil {
 		opts.Algorithm = sha1.New
@@ -25,14 +25,14 @@ func HOTP(key []byte, count int, opts HOTPOptions) uint {
 	}
 
 	// compute
-	return dynamicTruncation(hmacShaN(opts.Algorithm, key, count)) % pow10(opts.Digits)
+	return dynamicTruncation(hmacShaN(opts.Algorithm, key, counter)) % pow10(opts.Digits)
 }
 
 // hmacShaN generates a hmac-sha-n. The hash function is passed as a parameter.
-func hmacShaN(hashFunc func() hash.Hash, key []byte, count int) []byte {
+func hmacShaN(hashFunc func() hash.Hash, key []byte, counter int) []byte {
 	hasher := hmac.New(hashFunc, key)
 	buf := make([]byte, 8)
-	binary.BigEndian.PutUint64(buf, uint64(count))
+	binary.BigEndian.PutUint64(buf, uint64(counter))
 	hasher.Write(buf)
 	return hasher.Sum(nil)
 }

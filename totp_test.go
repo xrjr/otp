@@ -207,11 +207,11 @@ var totpTestValues []TOTPTestValue = []TOTPTestValue{
 	},
 }
 
-func TestTimePeriodCount(t *testing.T) {
+func TestTimePeriodCounter(t *testing.T) {
 	for i, testValue := range totpTestValues {
-		res := timePeriodCount(testValue.Time.Unix(), testValue.TimeReference, testValue.Period)
+		res := timePeriodCounter(testValue.Time.Unix(), testValue.TimeReference, testValue.Period)
 		if res != testValue.T {
-			t.Errorf("Error in TimePeriodCount (i = %d, expected = %d, got = %d)", i, testValue.T, res)
+			t.Errorf("Error in TimePeriodCounter (i = %d, expected = %d, got = %d)", i, testValue.T, res)
 		}
 	}
 }
@@ -233,14 +233,14 @@ func TestTOTP(t *testing.T) {
 	}
 }
 
-func TestTimePeriodCountStep(t *testing.T) {
+func TestTimePeriodCounterStep(t *testing.T) {
 	steps := []int{-2, -1, 0, 1, 2}
 	for i, testValue := range totpTestValues {
 		for _, step := range steps {
-			res := timePeriodCount(testValue.Time.Add(time.Second*time.Duration(testValue.Period)*time.Duration(step)).Unix(), testValue.TimeReference, testValue.Period)
+			res := timePeriodCounter(testValue.Time.Add(time.Second*time.Duration(testValue.Period)*time.Duration(step)).Unix(), testValue.TimeReference, testValue.Period)
 			expected := testValue.T + step
 			if res != expected {
-				t.Errorf("Error in TimePeriodCountStep (i = %d, step = %d, expected = %d, got = %d)", i, step, expected, res)
+				t.Errorf("Error in TimePeriodCounterStep (i = %d, step = %d, expected = %d, got = %d)", i, step, expected, res)
 			}
 		}
 	}

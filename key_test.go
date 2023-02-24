@@ -2,9 +2,7 @@ package otp
 
 import (
 	"bytes"
-	"crypto/sha1"
-	"crypto/sha256"
-	"crypto/sha512"
+	"crypto"
 	"errors"
 	"fmt"
 	"hash"
@@ -26,11 +24,11 @@ var keyTestValues = []KeyTestValue{
 		Uri:           "otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example",
 		ExpectedError: nil,
 		ExpectedKey: Key{
-			Type:      TypeTotp,
+			Type:      TypeTOTP,
 			Label:     "Example:alice@google.com",
 			Secret:    []byte{'H', 'e', 'l', 'l', 'o', '!', 0xde, 0xad, 0xbe, 0xef},
 			Issuer:    "Example",
-			Algorithm: sha1.New,
+			Algorithm: crypto.SHA1,
 			Digits:    6,
 			Counter:   0,
 			Period:    30,
@@ -41,11 +39,11 @@ var keyTestValues = []KeyTestValue{
 		Uri:           "otpauth://totp/ACME%20Co:john.doe@email.com?secret=HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ&issuer=ACME%20Co&algorithm=SHA1&digits=6&period=30&counter=123456",
 		ExpectedError: nil,
 		ExpectedKey: Key{
-			Type:      TypeTotp,
+			Type:      TypeTOTP,
 			Label:     "ACME Co:john.doe@email.com",
 			Secret:    []byte{0x3d, 0xc6, 0xca, 0xa4, 0x82, 0x4a, 0x6d, 0x28, 0x87, 0x67, 0xb2, 0x33, 0x1e, 0x20, 0xb4, 0x31, 0x66, 0xcb, 0x85, 0xd9},
 			Issuer:    "ACME Co",
-			Algorithm: sha1.New,
+			Algorithm: crypto.SHA1,
 			Digits:    6,
 			Counter:   0,
 			Period:    30,
@@ -56,11 +54,11 @@ var keyTestValues = []KeyTestValue{
 		Uri:           "otpauth://totp/ACME%20Co:john.doe@email.com?secret=HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ&issuer=ACME%20Co&algorithm=SHA256&digits=8&period=60",
 		ExpectedError: nil,
 		ExpectedKey: Key{
-			Type:      TypeTotp,
+			Type:      TypeTOTP,
 			Label:     "ACME Co:john.doe@email.com",
 			Secret:    []byte{0x3d, 0xc6, 0xca, 0xa4, 0x82, 0x4a, 0x6d, 0x28, 0x87, 0x67, 0xb2, 0x33, 0x1e, 0x20, 0xb4, 0x31, 0x66, 0xcb, 0x85, 0xd9},
 			Issuer:    "ACME Co",
-			Algorithm: sha256.New,
+			Algorithm: crypto.SHA256,
 			Digits:    8,
 			Counter:   0,
 			Period:    60,
@@ -71,11 +69,11 @@ var keyTestValues = []KeyTestValue{
 		Uri:           "otpauth://totp/ACME%20Co:john.doe@email.com?secret=HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ&issuer=ACME%20Co&algorithm=SHA512&digits=8&period=60",
 		ExpectedError: nil,
 		ExpectedKey: Key{
-			Type:      TypeTotp,
+			Type:      TypeTOTP,
 			Label:     "ACME Co:john.doe@email.com",
 			Secret:    []byte{0x3d, 0xc6, 0xca, 0xa4, 0x82, 0x4a, 0x6d, 0x28, 0x87, 0x67, 0xb2, 0x33, 0x1e, 0x20, 0xb4, 0x31, 0x66, 0xcb, 0x85, 0xd9},
 			Issuer:    "ACME Co",
-			Algorithm: sha512.New,
+			Algorithm: crypto.SHA512,
 			Digits:    8,
 			Counter:   0,
 			Period:    60,
@@ -96,6 +94,12 @@ var keyTestValues = []KeyTestValue{
 	{
 		// missing secret parameter
 		Uri:           "otpauth://totp/ACME%20Co:john.doe@email.com?issuer=ACME%20Co&algorithm=SHA256&digits=8&period=60",
+		ExpectedError: ErrNoSecret,
+		ExpectedKey:   Key{},
+	},
+	{
+		// empty secret parameter
+		Uri:           "otpauth://totp/ACME%20Co:john.doe@email.com?secret=&issuer=ACME%20Co&algorithm=SHA256&digits=8&period=60",
 		ExpectedError: ErrNoSecret,
 		ExpectedKey:   Key{},
 	},
@@ -135,11 +139,11 @@ var keyTestValues = []KeyTestValue{
 		Uri:           "otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=123456",
 		ExpectedError: nil,
 		ExpectedKey: Key{
-			Type:      TypeHotp,
+			Type:      TypeHOTP,
 			Label:     "Example:alice@google.com",
 			Secret:    []byte{'H', 'e', 'l', 'l', 'o', '!', 0xde, 0xad, 0xbe, 0xef},
 			Issuer:    "",
-			Algorithm: sha1.New,
+			Algorithm: crypto.SHA1,
 			Digits:    6,
 			Counter:   123456,
 			Period:    0,
@@ -150,11 +154,11 @@ var keyTestValues = []KeyTestValue{
 		Uri:           "otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=123456&issuer=Example&algorithm=SHA256&digits=8&period=30",
 		ExpectedError: nil,
 		ExpectedKey: Key{
-			Type:      TypeHotp,
+			Type:      TypeHOTP,
 			Label:     "Example:alice@google.com",
 			Secret:    []byte{'H', 'e', 'l', 'l', 'o', '!', 0xde, 0xad, 0xbe, 0xef},
 			Issuer:    "Example",
-			Algorithm: sha256.New,
+			Algorithm: crypto.SHA256,
 			Digits:    8,
 			Counter:   123456,
 			Period:    0,
@@ -165,11 +169,11 @@ var keyTestValues = []KeyTestValue{
 		Uri:           "otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=123456&issuer=Example&algorithm=SHA512&digits=8",
 		ExpectedError: nil,
 		ExpectedKey: Key{
-			Type:      TypeHotp,
+			Type:      TypeHOTP,
 			Label:     "Example:alice@google.com",
 			Secret:    []byte{'H', 'e', 'l', 'l', 'o', '!', 0xde, 0xad, 0xbe, 0xef},
 			Issuer:    "Example",
-			Algorithm: sha512.New,
+			Algorithm: crypto.SHA512,
 			Digits:    8,
 			Counter:   123456,
 			Period:    0,
@@ -188,8 +192,14 @@ var keyTestValues = []KeyTestValue{
 		ExpectedKey:   Key{},
 	},
 	{
-		// invalid secret
-		Uri:           "otpauth://hotp/Example:alice@google.com?issuer=Example&algorithm=SHA512&digits=8",
+		// missing secret parameter
+		Uri:           "otpauth://hotp/Example:alice@google.com?issuer=Example&algorithm=SHA512&digits=8&counter=123456",
+		ExpectedError: ErrNoSecret,
+		ExpectedKey:   Key{},
+	},
+	{
+		// empty secret parameter
+		Uri:           "otpauth://hotp/Example:alice@google.com?secret=&issuer=Example&algorithm=SHA512&digits=8&counter=123456",
 		ExpectedError: ErrNoSecret,
 		ExpectedKey:   Key{},
 	},
@@ -235,6 +245,7 @@ func TestParseURI(t *testing.T) {
 	for i, testValue := range keyTestValues {
 		key, err := ParseURI(testValue.Uri)
 
+		fmt.Println(err, testValue.ExpectedError)
 		if !errors.Is(err, testValue.ExpectedError) && !strings.Contains(err.Error(), testValue.ExpectedError.Error()) {
 			fmt.Println(err)
 			t.Errorf("Error in ParseURI (error check, i = %d)", i)
@@ -268,7 +279,7 @@ func keysEqual(key1, key2 Key) (bool, string) {
 	}
 
 	// Algorithm is supposed non-nil because keys equality check only appears if err = nil
-	if !hashFuncEqual(key1.Algorithm, key2.Algorithm) {
+	if key1.Algorithm != key2.Algorithm {
 		return false, "algorithm"
 	}
 
@@ -299,7 +310,7 @@ func TestKeyToHOTPOptions(t *testing.T) {
 		if testValue.ExpectedError == nil {
 			opts := testValue.ExpectedKey.HOTPOptions()
 
-			if !hashFuncEqual(opts.Algorithm, testValue.ExpectedKey.Algorithm) ||
+			if !hashFuncEqual(opts.Algorithm, testValue.ExpectedKey.Algorithm.New) ||
 				opts.Digits != testValue.ExpectedKey.Digits {
 				t.Errorf("Error in KeyToHOTPOptions (i = %d)", i)
 			}
@@ -312,7 +323,7 @@ func TestKeyToTOTPOptions(t *testing.T) {
 		if testValue.ExpectedError == nil {
 			opts := testValue.ExpectedKey.TOTPOptions()
 
-			if !hashFuncEqual(opts.Algorithm, testValue.ExpectedKey.Algorithm) ||
+			if !hashFuncEqual(opts.Algorithm, testValue.ExpectedKey.Algorithm.New) ||
 				opts.Digits != testValue.ExpectedKey.Digits ||
 				opts.Period != testValue.ExpectedKey.Period {
 				t.Errorf("Error in KeyToHOTPOptions (i = %d)", i)
