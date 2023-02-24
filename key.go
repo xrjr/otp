@@ -36,7 +36,7 @@ var (
 var (
 	ErrInvalidScheme    = errors.New("invalid scheme")
 	ErrInvalidType      = errors.New("invalid type")
-	ErrNoScret          = errors.New("no secret provided")
+	ErrNoSecret         = errors.New("no secret provided")
 	ErrInvalidAlgorithm = errors.New("invalid algorithm")
 	ErrNoCounter        = errors.New("no counter provided")
 )
@@ -86,11 +86,11 @@ func ParseURI(uri string) (Key, error) {
 	res.Type = parsed.Host
 
 	// label
-	res.Label = parsed.Path
+	res.Label = parsed.Path[1:]
 
 	// secret (+validation)
 	if !parsed.Query().Has(queryKeySecret) {
-		return res, ErrNoScret
+		return res, ErrNoSecret
 	}
 
 	secret, err := base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(parsed.Query().Get(queryKeySecret))

@@ -228,7 +228,7 @@ func TestTOTP(t *testing.T) {
 			Step:          0,
 		})
 		if res != testValue.OTP {
-			t.Errorf("Error in Compute (i = %d, expected = %d, got = %d)", i, testValue.OTP, res)
+			t.Errorf("Error in TOTP (i = %d, expected = %d, got = %d)", i, testValue.OTP, res)
 		}
 	}
 }
@@ -269,8 +269,24 @@ func TestTOTPStep(t *testing.T) {
 				Step:          step,
 			})
 			if resStep != resAdd {
-				t.Errorf("Error in ComputeStep (i = %d, step = %d, expected = %d, got = %d)", i, step, resAdd, resStep)
+				t.Errorf("Error in TOTPStep (i = %d, step = %d, expected = %d, got = %d)", i, step, resAdd, resStep)
 			}
 		}
+	}
+}
+
+func TestTOTPDefaults(t *testing.T) {
+	testValue := totpTestValues[0]
+
+	resDefaults := TOTP(testValue.Secret, testValue.Time, TOTPOptions{})
+	resCustom := TOTP(testValue.Secret, testValue.Time, TOTPOptions{
+		HOTPOptions:   HOTPOptions{},
+		TimeReference: 0,
+		Period:        30,
+		Step:          0,
+	})
+
+	if resDefaults != resCustom {
+		t.Errorf("Error in TOTPDefaults (expected = %d, got = %d)", resCustom, resDefaults)
 	}
 }
