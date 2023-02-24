@@ -1,4 +1,4 @@
-package hotp
+package otp
 
 import (
 	"bytes"
@@ -6,16 +6,16 @@ import (
 	"testing"
 )
 
-type TestValue struct {
+type HOTPTestValue struct {
 	Count                int
 	IntermediateHmacSha1 []byte
 	Truncated            uint
 	OTP                  uint
 }
 
-var Secret []byte = []byte("12345678901234567890")
+var hotpSecret = []byte("12345678901234567890")
 
-var testValues []TestValue = []TestValue{
+var hotpTestValues = []HOTPTestValue{
 	{
 		Count:                0,
 		IntermediateHmacSha1: []byte{0xcc, 0x93, 0xcf, 0x18, 0x50, 0x8d, 0x94, 0x93, 0x4c, 0x64, 0xb6, 0x5d, 0x8b, 0xa7, 0x66, 0x7f, 0xb7, 0xcd, 0xe4, 0xb0},
@@ -79,8 +79,8 @@ var testValues []TestValue = []TestValue{
 }
 
 func TestHmacShaN1(t *testing.T) {
-	for _, testValue := range testValues {
-		res := hmacShaN(sha1.New, Secret, testValue.Count)
+	for _, testValue := range hotpTestValues {
+		res := hmacShaN(sha1.New, hotpSecret, testValue.Count)
 		if !bytes.Equal(res, testValue.IntermediateHmacSha1) {
 			t.Errorf("Error in hmacSha1 for Count = %d", testValue.Count)
 		}
@@ -88,7 +88,7 @@ func TestHmacShaN1(t *testing.T) {
 }
 
 func TestDynamicTruncation(t *testing.T) {
-	for _, testValue := range testValues {
+	for _, testValue := range hotpTestValues {
 		res := dynamicTruncation(testValue.IntermediateHmacSha1)
 		if res != testValue.Truncated {
 			t.Errorf("Error in dynamicTruncation for Count = %d (expected %d, got %d)", testValue.Count, testValue.Truncated, res)
@@ -96,10 +96,9 @@ func TestDynamicTruncation(t *testing.T) {
 	}
 }
 
-func TestCompute(t *testing.T) {
-	client := New(Secret)
-	for _, testValue := range testValues {
-		res := client.Compute(testValue.Count)
+func TestHOTP(t *testing.T) {
+	for _, testValue := range hotpTestValues {
+		res := HOTP(hotpSecret, testValue.Count, HOTPOptions{})
 		if res != testValue.OTP {
 			t.Errorf("Error in Compute for Count = %d (expected %d, got %d)", testValue.Count, testValue.OTP, res)
 		}

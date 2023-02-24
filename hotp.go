@@ -1,5 +1,5 @@
 // hotp implements HOTP as decribed in rfc 4226 (https://www.ietf.org/rfc/rfc4226.txt).
-package hotp
+package otp
 
 import (
 	"crypto/hmac"
@@ -8,26 +8,24 @@ import (
 	"hash"
 )
 
-// Client contains base informations to compute OTP code.
-type Client struct {
-	Key      []byte
+type HOTPOptions struct {
 	Digits   uint
 	HashFunc func() hash.Hash
 }
 
-// New returns a HOTP client with a given key.
-// Default options are used : Digits = 6, Hash = sha1. You can access and change those options.
-func New(key []byte) Client {
-	return Client{
-		Key:      key,
-		Digits:   6,
-		HashFunc: sha1.New,
+// HOTP computes the OTP code of a given count.
+func HOTP(key []byte, count int, opts HOTPOptions) uint {
+	// defaults
+	if opts.HashFunc == nil {
+		opts.HashFunc = sha1.New
 	}
-}
 
-// Compute computes the OTP code of a given count.
-func (c Client) Compute(count int) uint {
-	return dynamicTruncation(hmacShaN(c.HashFunc, c.Key, count)) % pow10(c.Digits)
+	if opts.Digits == 0 {
+		opts.Digits = 6
+	}
+
+	// compute
+	return dynamicTruncation(hmacShaN(opts.HashFunc, key, count)) % pow10(opts.Digits)
 }
 
 // hmacShaN generates a hmac-sha-n. The hash function is passed as a parameter.
