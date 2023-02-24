@@ -1,3 +1,4 @@
+// totp implements TOTP as described in rfc 6238 (https://www.ietf.org/rfc/rfc6238.txt).
 package totp
 
 import (
@@ -7,13 +8,15 @@ import (
 )
 
 // Client contains base informations required to compute TOTP code.
-// Its underlying hotp.Client can be configured for example to change the number of digits returned.
 type Client struct {
 	HOTPClient hotp.Client
 	T0         int64 // reference time in seconds
 	TimeStepX  int   // time period in seconds
 }
 
+// New returns a TOTP client with a given key.
+// Default options are used : T0 = 0, TimeStepX = 30. You can access and change those options.
+// A default hotp.Client is used in background, you can access and change its options.
 func New(key []byte) Client {
 	return Client{
 		HOTPClient: hotp.New(key),

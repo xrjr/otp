@@ -1,3 +1,4 @@
+// hotp implements HOTP as decribed in rfc 4226 (https://www.ietf.org/rfc/rfc4226.txt).
 package hotp
 
 import (
@@ -7,6 +8,7 @@ import (
 	"hash"
 )
 
+// Client contains base informations to compute OTP code.
 type Client struct {
 	Key      []byte
 	Digits   uint
@@ -28,6 +30,7 @@ func (c Client) Compute(count int) uint {
 	return dynamicTruncation(hmacShaN(c.HashFunc, c.Key, count)) % pow10(c.Digits)
 }
 
+// hmacShaN generates a hmac-sha-n. The hash function is passed as a parameter.
 func hmacShaN(hashFunc func() hash.Hash, key []byte, count int) []byte {
 	hasher := hmac.New(hashFunc, key)
 	buf := make([]byte, 8)
