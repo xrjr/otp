@@ -94,13 +94,13 @@ var keyTestValues = []KeyTestValue{
 	{
 		// missing secret parameter
 		Uri:           "otpauth://totp/ACME%20Co:john.doe@email.com?issuer=ACME%20Co&algorithm=SHA256&digits=8&period=60",
-		ExpectedError: ErrNoSecret,
+		ExpectedError: ErrMissingSecret,
 		ExpectedKey:   Key{},
 	},
 	{
 		// empty secret parameter
 		Uri:           "otpauth://totp/ACME%20Co:john.doe@email.com?secret=&issuer=ACME%20Co&algorithm=SHA256&digits=8&period=60",
-		ExpectedError: ErrNoSecret,
+		ExpectedError: ErrMissingSecret,
 		ExpectedKey:   Key{},
 	},
 	{
@@ -194,19 +194,19 @@ var keyTestValues = []KeyTestValue{
 	{
 		// missing secret parameter
 		Uri:           "otpauth://hotp/Example:alice@google.com?issuer=Example&algorithm=SHA512&digits=8&counter=123456",
-		ExpectedError: ErrNoSecret,
+		ExpectedError: ErrMissingSecret,
 		ExpectedKey:   Key{},
 	},
 	{
 		// empty secret parameter
 		Uri:           "otpauth://hotp/Example:alice@google.com?secret=&issuer=Example&algorithm=SHA512&digits=8&counter=123456",
-		ExpectedError: ErrNoSecret,
+		ExpectedError: ErrMissingSecret,
 		ExpectedKey:   Key{},
 	},
 	{
 		// missing counter parameter
 		Uri:           "otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example&algorithm=SHA512&digits=8",
-		ExpectedError: ErrNoCounter,
+		ExpectedError: ErrMissingCounter,
 		ExpectedKey:   Key{},
 	},
 	{
@@ -245,7 +245,6 @@ func TestParseURI(t *testing.T) {
 	for i, testValue := range keyTestValues {
 		key, err := ParseURI(testValue.Uri)
 
-		fmt.Println(err, testValue.ExpectedError)
 		if !errors.Is(err, testValue.ExpectedError) && !strings.Contains(err.Error(), testValue.ExpectedError.Error()) {
 			fmt.Println(err)
 			t.Errorf("Error in ParseURI (error check, i = %d)", i)
@@ -255,47 +254,47 @@ func TestParseURI(t *testing.T) {
 			continue
 		}
 
-		if ok, step := keysEqual(key, testValue.ExpectedKey); !ok {
-			t.Errorf("Error in ParseURI (equality check, i = %d, step = %s)", i, step)
+		if ok := keysEqual(key, testValue.ExpectedKey); !ok {
+			t.Errorf("Error in ParseURI (equality check, i = %d)", i)
 		}
 	}
 }
 
-func keysEqual(key1, key2 Key) (bool, string) {
+func keysEqual(key1, key2 Key) bool {
 	if key1.Type != key2.Type {
-		return false, "type"
+		return false
 	}
 
 	if key1.Label != key2.Label {
-		return false, "label"
+		return false
 	}
 
 	if !bytes.Equal(key1.Secret, key2.Secret) {
-		return false, "secret"
+		return false
 	}
 
 	if key1.Issuer != key2.Issuer {
-		return false, "issuer"
+		return false
 	}
 
 	// Algorithm is supposed non-nil because keys equality check only appears if err = nil
 	if key1.Algorithm != key2.Algorithm {
-		return false, "algorithm"
+		return false
 	}
 
 	if key1.Digits != key2.Digits {
-		return false, "digits"
+		return false
 	}
 
 	if key1.Counter != key2.Counter {
-		return false, "counter"
+		return false
 	}
 
 	if key1.Period != key2.Period {
-		return false, "period"
+		return false
 	}
 
-	return true, ""
+	return true
 }
 
 func hashFuncEqual(h1, h2 func() hash.Hash) bool {
@@ -329,5 +328,69 @@ func TestKeyToTOTPOptions(t *testing.T) {
 				t.Errorf("Error in KeyToHOTPOptions (i = %d)", i)
 			}
 		}
+	}
+}
+
+func TestKeyToURIShouldWork(t *testing.T) {
+	for i, testValue := range keyTestValues {
+		if testValue.ExpectedError == nil {
+			// here we take only valid URIs. If there is an error in the ParseURI function, it should be catched by its tests.
+
+			uri, err := testValue.ExpectedKey.URI()
+			if err != nil {
+				t.Errorf("Error in KeyToURIShouldWork (err non nil 1, i = %d)", i)
+			}
+
+			key, err := ParseURI(uri)
+			if err != nil {
+				t.Errorf("Error in KeyToURIShouldWork (err non nil 2, i = %d)", i)
+			}
+
+			if !keysEqual(testValue.ExpectedKey, key) {
+				if err != nil {
+					t.Errorf("Error in KeyToURIShouldWork (equality check, i = %d)", i)
+				}
+			}
+		}
+	}
+}
+
+func TestKeyToURIShouldNotWork(t *testing.T) {
+	var err error
+
+	keyHOTP := Key{}
+
+	keyHOTP.Type = "example"
+
+	_, err = keyHOTP.URI()
+	if err != ErrInvalidType {
+		t.Errorf("Error in KeyToURIShouldNotWork (err should be ErrInvalidType)")
+		return
+	}
+
+	keyHOTP.Type = TypeHOTP
+
+	_, err = keyHOTP.URI()
+	if err != ErrMissingSecret {
+		t.Errorf("Error in KeyToURIShouldNotWork (err should be ErrMissingSecret)")
+		return
+	}
+
+	keyHOTP.Secret = []byte{0x00, 0x01, 0x02, 0x03}
+
+	keyHOTP.Algorithm = crypto.MD5
+
+	_, err = keyHOTP.URI()
+	if err != ErrInvalidAlgorithm {
+		t.Errorf("Error in KeyToURIShouldNotWork (err should be ErrInvalidAlgorithm)")
+		return
+	}
+
+	keyHOTP.Algorithm = crypto.Hash(0)
+
+	_, err = keyHOTP.URI()
+	if err != nil {
+		t.Errorf("Error in KeyToURIShouldNotWork (err should be nil)")
+		return
 	}
 }

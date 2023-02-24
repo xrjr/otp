@@ -34,6 +34,7 @@ var (
 	}
 
 	algorithmsHashToString = map[crypto.Hash]string{
+		0:             "SHA1", // defaults to sha1
 		crypto.SHA1:   "SHA1",
 		crypto.SHA256: "SHA256",
 		crypto.SHA512: "SHA512",
@@ -43,9 +44,9 @@ var (
 var (
 	ErrInvalidScheme    = errors.New("invalid scheme")
 	ErrInvalidType      = errors.New("invalid type")
-	ErrNoSecret         = errors.New("no secret provided")
+	ErrMissingSecret    = errors.New("no secret provided")
 	ErrInvalidAlgorithm = errors.New("invalid algorithm")
-	ErrNoCounter        = errors.New("no counter provided")
+	ErrMissingCounter   = errors.New("no counter provided")
 )
 
 type Key struct {
@@ -97,7 +98,7 @@ func ParseURI(uri string) (Key, error) {
 
 	// secret (+validation)
 	if !parsed.Query().Has(queryKeySecret) || parsed.Query().Get(queryKeySecret) == "" {
-		return res, ErrNoSecret
+		return res, ErrMissingSecret
 	}
 
 	secret, err := base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(parsed.Query().Get(queryKeySecret))
@@ -137,7 +138,7 @@ func ParseURI(uri string) (Key, error) {
 	// counter (only hotp)
 	if res.Type == TypeHOTP {
 		if !parsed.Query().Has(queryKeyCounter) {
-			return res, ErrNoCounter
+			return res, ErrMissingCounter
 		} else {
 			counter, err := strconv.ParseInt(parsed.Query().Get(queryKeyCounter), 10, 0)
 			if err != nil {
@@ -171,7 +172,7 @@ func (key Key) URI() (string, error) {
 	params := make(url.Values)
 
 	if len(key.Secret) == 0 {
-		return "", ErrNoSecret
+		return "", ErrMissingSecret
 	}
 
 	secret := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(key.Secret)
@@ -185,7 +186,7 @@ func (key Key) URI() (string, error) {
 		params.Set(queryKeyIssuer, key.Issuer)
 	}
 
-	algorithm, ok := algorithmsHashToString[key.Algorithm]
+	algorithm, ok := algorithmsHashToString[key.Algorithm] // defaults to sha1
 	if !ok {
 		return "", ErrInvalidAlgorithm
 	}

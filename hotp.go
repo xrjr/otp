@@ -13,7 +13,7 @@ type HOTPOptions struct {
 	Algorithm func() hash.Hash
 }
 
-// HOTP computes the OTP code of a given count.
+// HOTP computes the OTP code of a given counter.
 func HOTP(key []byte, counter int, opts HOTPOptions) uint {
 	// defaults
 	if opts.Algorithm == nil {
