@@ -158,7 +158,7 @@ var testValues []TestValue = []TestValue{
 
 func TestTimePeriodCount(t *testing.T) {
 	for i, testValue := range testValues {
-		res := timePeriodCount(testValue.Time.Unix(), T0, TimeStepX)
+		res := TimePeriodCount(testValue.Time.Unix(), T0, TimeStepX)
 		if res != testValue.T {
 			t.Errorf("Error in TimePeriodCount (i = %d, expected = %d, got = %d)", i, testValue.T, res)
 		}
@@ -181,7 +181,7 @@ func TestTimePeriodCountStep(t *testing.T) {
 	steps := []int{-2, -1, 0, 1, 2}
 	for i, testValue := range testValues {
 		for _, step := range steps {
-			res := timePeriodCount(testValue.Time.Add(time.Second*time.Duration(TimeStepX)*time.Duration(step)).Unix(), T0, TimeStepX)
+			res := TimePeriodCount(testValue.Time.Add(time.Second*time.Duration(TimeStepX)*time.Duration(step)).Unix(), T0, TimeStepX)
 			expected := testValue.T + step
 			if res != expected {
 				t.Errorf("Error in TimePeriodCountStep (i = %d, step = %d, expected = %d, got = %d)", i, step, expected, res)
