@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"hash"
 	"strconv"
-	"strings"
 	"testing"
 )
 
@@ -16,6 +15,10 @@ type KeyTestValue struct {
 	ExpectedError error
 	ExpectedKey   Key
 }
+
+var (
+	ErrAny = errors.New("any") // used to check if there is an error, regardless of which one
+)
 
 var keyTestValues = []KeyTestValue{
 	// TOTP
@@ -112,13 +115,13 @@ var keyTestValues = []KeyTestValue{
 	{
 		// invalid uri (url parsing)
 		Uri:           "otp%20auth://totp/ACME%20Co:john.doe@email.com?secret=HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ&issuer=ACME%20Co&digits=8&period=60",
-		ExpectedError: errors.New(""), // used to check if there is an error, regardless of which one
+		ExpectedError: ErrAny,
 		ExpectedKey:   Key{},
 	},
 	{
 		// invalid secret (base32 decoding)
 		Uri:           "otpauth://totp/ACME%20Co:john.doe@email.com?secret=1XDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ&issuer=ACME%20Co&digits=8&period=60",
-		ExpectedError: errors.New(""), // used to check if there is an error, regardless of which one
+		ExpectedError: ErrAny,
 		ExpectedKey:   Key{},
 	},
 	{
@@ -218,13 +221,13 @@ var keyTestValues = []KeyTestValue{
 	{
 		// invalid uri (url parsing)
 		Uri:           "otp%20auth://hotp/ACME%20Co:john.doe@email.com?secret=HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ&issuer=ACME%20Co&digits=8&counter=123456",
-		ExpectedError: errors.New(""), // used to check if there is an error, regardless of which one
+		ExpectedError: ErrAny,
 		ExpectedKey:   Key{},
 	},
 	{
 		// invalid secret (base32 parsing)
 		Uri:           "otpauth://hotp/ACME%20Co:john.doe@email.com?secret=1XDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ&issuer=ACME%20Co&digits=8&counter=123456",
-		ExpectedError: errors.New(""), // used to check if there is an error, regardless of which one
+		ExpectedError: ErrAny,
 		ExpectedKey:   Key{},
 	},
 	{
@@ -245,7 +248,7 @@ func TestParseURI(t *testing.T) {
 	for i, testValue := range keyTestValues {
 		key, err := ParseURI(testValue.Uri)
 
-		if !errors.Is(err, testValue.ExpectedError) && !strings.Contains(err.Error(), testValue.ExpectedError.Error()) {
+		if !errors.Is(err, testValue.ExpectedError) && !errors.Is(testValue.ExpectedError, ErrAny) {
 			fmt.Println(err)
 			t.Errorf("Error in ParseURI (error check, i = %d)", i)
 			return
