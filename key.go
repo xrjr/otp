@@ -1,4 +1,3 @@
-// key implements Google Authenticator Key Uri Format as described by the google-authenticator wiki (https://github.com/google/google-authenticator/wiki/Key-Uri-Format).
 package otp
 
 import (

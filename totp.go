@@ -1,4 +1,3 @@
-// totp implements TOTP as described in rfc 6238 (https://www.ietf.org/rfc/rfc6238.txt).
 package otp
 
 import (

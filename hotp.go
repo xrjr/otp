@@ -1,4 +1,3 @@
-// hotp implements HOTP as decribed in rfc 4226 (https://www.ietf.org/rfc/rfc4226.txt).
 package otp
 
 import (
