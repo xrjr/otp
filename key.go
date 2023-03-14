@@ -59,20 +59,6 @@ type Key struct {
 	Period    int
 }
 
-func (key *Key) HOTPOptions() HOTPOptions {
-	return HOTPOptions{
-		Digits:    key.Digits,
-		Algorithm: key.Algorithm.New,
-	}
-}
-
-func (key *Key) TOTPOptions() TOTPOptions {
-	return TOTPOptions{
-		HOTPOptions: key.HOTPOptions(),
-		Period:      key.Period,
-	}
-}
-
 func ParseURI(uri string) (Key, error) {
 	res := Key{}
 

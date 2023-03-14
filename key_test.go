@@ -310,7 +310,10 @@ func hashFuncEqual(h1, h2 func() hash.Hash) bool {
 func TestKeyToHOTPOptions(t *testing.T) {
 	for i, testValue := range keyTestValues {
 		if testValue.ExpectedError == nil {
-			opts := testValue.ExpectedKey.HOTPOptions()
+			opts := HOTPOptions{
+				Digits:    testValue.ExpectedKey.Digits,
+				Algorithm: testValue.ExpectedKey.Algorithm.New,
+			}
 
 			if !hashFuncEqual(opts.Algorithm, testValue.ExpectedKey.Algorithm.New) ||
 				opts.Digits != testValue.ExpectedKey.Digits {
@@ -323,7 +326,13 @@ func TestKeyToHOTPOptions(t *testing.T) {
 func TestKeyToTOTPOptions(t *testing.T) {
 	for i, testValue := range keyTestValues {
 		if testValue.ExpectedError == nil {
-			opts := testValue.ExpectedKey.TOTPOptions()
+			opts := TOTPOptions{
+				HOTPOptions: HOTPOptions{
+					Digits:    testValue.ExpectedKey.Digits,
+					Algorithm: testValue.ExpectedKey.Algorithm.New,
+				},
+				Period: testValue.ExpectedKey.Period,
+			}
 
 			if !hashFuncEqual(opts.Algorithm, testValue.ExpectedKey.Algorithm.New) ||
 				opts.Digits != testValue.ExpectedKey.Digits ||
