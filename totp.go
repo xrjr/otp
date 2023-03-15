@@ -6,8 +6,8 @@ import (
 
 type TOTPOptions struct {
 	HOTPOptions
-	TimeReference int64 // time reference in seconds
-	Period        int   // time period in seconds
+	TimeReference int64 // time reference in seconds (called T0 in rfc)
+	Period        int   // time period in seconds (called X in rfc)
 	Step          int   // number of step before or after given time
 }
 
